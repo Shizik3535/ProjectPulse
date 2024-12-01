@@ -1,216 +1,112 @@
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QStackedWidget, QWidget, QLabel, QPushButton
-from PyQt6.QtCore import Qt
-from app.ui.components.sidebar import Sidebar
-from app.ui.components.statusbar import StatusBar
-from app.ui.pages.staff_page import StaffPage
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget
+
+from app.ui.components.status_bar import StatusBar
+from app.ui.components.side_menu import SideMenu
+from app.ui.pages.home_page import HomePage
+from app.ui.pages.projects_page import ProjectsPage
+from app.ui.pages.tasks_page import TasksPage
+from app.ui.pages.employees_page import EmployeesPage
+from app.ui.pages.reports_page import ReportsPage
+from app.ui.pages.settings_page import SettingsPage
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        # Настройки окна
         self.setWindowTitle("ProjectPulse")
         self.resize(1024, 720)
         self.setMinimumSize(1024, 720)
-
-        # Установка градиента фона
         self.setStyleSheet(""" 
             MainWindow { 
                 background: qlineargradient(
                     spread: pad, 
                     x1: 0, y1: 0, x2: 1, y2: 1, 
                     stop: 0 #1c282e, stop: 1 #273e4b 
-                ); 
-            } 
-
-            QStackedWidget { 
-                background: #000; 
-            } 
+                );
+            }
         """)
 
-        # История навигации
-        self.navigation_history = [{'page': 0}]  # Начальный элемент: Главная страница
-        self.current_index = 0
-
-        # Основной виджет и макеты
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-
-        main_layout = QHBoxLayout()
-        self.sidebar = Sidebar()
-        main_layout.addWidget(self.sidebar)
-
-        content_widget = QWidget()
-        content_layout = QVBoxLayout()
-
-        # Инициализация статус-бара
-        self.status_bar = StatusBar()
-        content_layout.addWidget(self.status_bar)
-
-        self.stack = QStackedWidget()
-        content_layout.addWidget(self.stack)
-        content_widget.setLayout(content_layout)
-        main_layout.addWidget(content_widget)
-
-        # Страницы создаются только по мере необходимости
-        self.pages = {
-            "главная": None,
-            "проекты": None,
-            "проект": None,
-            "задачи": None,
-            "задача": None,
-            "сотрудники": None,
-            "сотрудник": None,
-            "отчёты": None,
-            "настройки": None,
+        # Словарь страниц: ключ — индекс, значение — кортеж (класс страницы, заголовок)
+        self.page_classes = {
+            0: (HomePage, "Главная"),
+            1: (ProjectsPage, "Проекты"),
+            2: (TasksPage, "Задачи"),
+            3: (EmployeesPage, "Сотрудники"),
+            4: (ReportsPage, "Отчёты"),
+            5: (SettingsPage, "Настройки")
         }
 
-        # Обработка сигналов
-        self.sidebar.navigate.connect(self.switch_page)
-        self.status_bar.back_signal.connect(self.go_back)
-        self.status_bar.forward_signal.connect(self.go_forward)
-        self.status_bar.reload_signal.connect(self.reload_page)
+        # Инициализация UI
+        self.init_ui()
 
-        main_widget.setLayout(main_layout)
+    def init_ui(self):
+        # Главный виджет
+        main_widget = QWidget(self)
+        self.setCentralWidget(main_widget)
 
-    def create_page(self, page_name, **kwargs):
-        """Функция для создания страницы при первом переходе."""
-        if page_name == "главная":
-            return self.create_placeholder_page("Главная")
-        elif page_name == "проекты":
-            return self.create_projects_page()
-        elif page_name == "проект":
-            return self.create_placeholder_page("Проект", project_id=kwargs.get('project_id'))
-        elif page_name == "задачи":
-            return self.create_tasks_page()
-        elif page_name == "задача":
-            return self.create_placeholder_page("Задача", task_id=kwargs.get('task_id'))
-        elif page_name == "сотрудники":
-            return StaffPage()  # Страница сотрудников
-        elif page_name == "сотрудник":
-            return self.create_placeholder_page("Сотрудник", staff_id=kwargs.get('staff_id'))
-        elif page_name == "отчёты":
-            return self.create_placeholder_page("Отчёты")
-        elif page_name == "настройки":
-            return self.create_placeholder_page("Настройки")
+        # Создание основного контента
+        content_widget = QWidget(self)
 
-    def create_placeholder_page(self, title, **kwargs):
-        page = QWidget()
-        layout = QVBoxLayout()
-        label = QLabel(f"{title}")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 24px; color: white;")
-        layout.addWidget(label)
+        # Основной контент
+        self.stacked_widget = QStackedWidget(self)
+        self.page_instances = {}  # Храним созданные экземпляры страниц
 
-        # Показ id, если передан
-        for key, value in kwargs.items():
-            if value is not None:
-                id_label = QLabel(f"{key.capitalize()} ID: {value}")
-                id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                id_label.setStyleSheet("font-size: 18px; color: white;")
-                layout.addWidget(id_label)
+        # Создание бокового меню
+        self.side_menu = SideMenu()
+        self.side_menu.home_clicked.connect(lambda: self.show_page(0))
+        self.side_menu.projects_clicked.connect(lambda: self.show_page(1))
+        self.side_menu.tasks_clicked.connect(lambda: self.show_page(2))
+        self.side_menu.employees_clicked.connect(lambda: self.show_page(3))
+        self.side_menu.reports_clicked.connect(lambda: self.show_page(4))
+        self.side_menu.settings_clicked.connect(lambda: self.show_page(5))
 
-        page.setLayout(layout)
-        return page
+        # Создание строки состояния
+        self.status_bar = StatusBar()
+        self.status_bar.back_clicked.connect(self.go_back)
+        self.status_bar.forward_clicked.connect(self.go_forward)
+        self.status_bar.reload_clicked.connect(self.reload_content)
 
-    def create_projects_page(self):
-        page = QWidget()
-        layout = QVBoxLayout()
-        label = QLabel("Страница проектов")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 24px; color: white;")
-        layout.addWidget(label)
+        # Создание layouts
+        main_layout = QHBoxLayout(main_widget)
+        content_layout = QVBoxLayout()
 
-        # Кнопки для переключения на детализированные страницы проекта
-        button1 = QPushButton("Детали проекта 1")
-        button1.clicked.connect(lambda: self.switch_page("проект", project_id=1))
-        layout.addWidget(button1)
+        # Установка layouts для основного контента
+        content_widget.setLayout(content_layout)
 
-        button2 = QPushButton("Детали проекта 2")
-        button2.clicked.connect(lambda: self.switch_page("проект", project_id=2))
-        layout.addWidget(button2)
+        # Добавление в layouts бокового меню, строки состояния и основного контента
+        content_layout.addWidget(self.status_bar)
+        content_layout.addWidget(self.stacked_widget)
+        main_layout.addWidget(self.side_menu)
+        main_layout.addWidget(content_widget)
 
-        page.setLayout(layout)
-        return page
+        # Показать главную страницу по умолчанию
+        self.show_page(0)
 
-    def create_tasks_page(self):
-        page = QWidget()
-        layout = QVBoxLayout()
-        label = QLabel("Страница задач")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 24px; color: white;")
-        layout.addWidget(label)
+    def show_page(self, index):
+        """Показать страницу по индексу, создавая её при необходимости"""
+        if index not in self.page_instances:
+            # Создаем экземпляр страницы и добавляем его в QStackedWidget
+            page_class, title = self.page_classes[index]
+            page_instance = page_class()
+            self.page_instances[index] = page_instance
+            self.stacked_widget.addWidget(page_instance)
 
-        # Кнопки для переключения на детализированные страницы задачи
-        button1 = QPushButton("Детали задачи 1")
-        button1.clicked.connect(lambda: self.switch_page("задача", task_id=1))
-        layout.addWidget(button1)
+        # Устанавливаем текущую страницу
+        self.stacked_widget.setCurrentWidget(self.page_instances[index])
+        # Устанавливаем заголовок в строке состояния
+        self.set_section_title(self.page_classes[index][1])
 
-        button2 = QPushButton("Детали задачи 2")
-        button2.clicked.connect(lambda: self.switch_page("задача", task_id=2))
-        layout.addWidget(button2)
-
-        page.setLayout(layout)
-        return page
-
-    def update_navigation_buttons(self):
-        # Скрываем/показываем кнопку "назад"
-        self.status_bar.back_button.setVisible(self.current_index > 0)
-        # Скрываем/показываем кнопку "вперёд"
-        self.status_bar.forward_button.setVisible(self.current_index < len(self.navigation_history) - 1)
-
-    def switch_page(self, page_name, **kwargs):
-        try:
-            # Если страница еще не создана, создаем её
-            if self.pages[page_name] is None:
-                self.pages[page_name] = self.create_page(page_name, **kwargs)
-                self.stack.addWidget(self.pages[page_name])
-
-            # Переключаемся на нужную страницу
-            index = list(self.pages.keys()).index(page_name)
-            page_data = {'page': index}
-
-            # Добавляем параметры в словарь page_data
-            for key, value in kwargs.items():
-                page_data[key] = value
-
-            # Обрезка истории, если переходим на новую страницу после возврата
-            if self.current_index < len(self.navigation_history) - 1:
-                self.navigation_history = self.navigation_history[:self.current_index + 1]
-
-            # Добавление новой страницы в историю
-            self.navigation_history.append(page_data)
-            self.current_index += 1
-
-            self.stack.setCurrentIndex(index)
-            self.status_bar.update_title(page_name.capitalize())
-
-            # Обновление кнопок навигации
-            self.update_navigation_buttons()
-
-        except Exception as e:
-            print(f"Error switching page: {e}")
+    def set_section_title(self, title):
+        """Изменение заголовка в строке состояния"""
+        self.status_bar.set_section_title(title)
 
     def go_back(self):
-        if self.current_index > 0:
-            self.current_index -= 1
-            current_page = self.navigation_history[self.current_index]
-            self.stack.setCurrentIndex(current_page['page'])
-            self.update_status_title()
-            self.update_navigation_buttons()
+        print("Кнопка 'Назад' нажата")
 
     def go_forward(self):
-        if self.current_index < len(self.navigation_history) - 1:
-            self.current_index += 1
-            current_page = self.navigation_history[self.current_index]
-            self.stack.setCurrentIndex(current_page['page'])
-            self.update_status_title()
-            self.update_navigation_buttons()
+        print("Кнопка 'Вперёд' нажата")
 
-    def reload_page(self):
-        current_page_index = self.stack.currentIndex()
-        # Логика обновления текущей страницы (пока пустая)
-
-    def update_status_title(self):
-        current_page = self.navigation_history[self.current_index]
-        current_page_name = list(self.pages.keys())[current_page['page']]
-        self.status_bar.update_title(current_page_name.capitalize())
+    def reload_content(self):
+        print("Кнопка 'Перезагрузить' нажата")

@@ -20,8 +20,8 @@ class Project(Base):
     # Атрибуты
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    start_date = Column(Date, nullable=True)
+    description = Column(String, nullable=False)
+    start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=True)
 
     # Внешние ключи
