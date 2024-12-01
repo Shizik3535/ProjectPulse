@@ -20,9 +20,9 @@ class Project(Base):
     # Атрибуты
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    description = Column(String, nullable=False)
+    description = Column(String, nullable=True)
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=False)
 
     # Внешние ключи
     status_id = Column(Integer, ForeignKey('status_projects.id', ondelete="SET NULL"), nullable=True)

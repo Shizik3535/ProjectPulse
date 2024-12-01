@@ -4,9 +4,7 @@ import os
 
 
 # URL Базы данных
-base_dir = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(base_dir, '../../', 'projectpulse.db')
-DB_URL = f'sqlite:///{os.path.abspath(DB_PATH)}'
+DB_URL = f'postgresql://postgres:postgres@localhost:5432/test_projectpulse'
 
 
 # Создание движка

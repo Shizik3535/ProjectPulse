@@ -35,14 +35,10 @@ class BaseDAO:
     @classmethod
     def create(cls, **data):
         """Создание записи"""
-        try:
-            with session_maker() as session:
-                query = insert(cls.model).values(**data)
-                session.execute(query)
-                session.commit()
-
-        except Exception as e:
-            print(f"Ошибка создания записи: {e}")
+        with session_maker() as session:
+            query = insert(cls.model).values(**data)
+            session.execute(query)
+            session.commit()
 
     @classmethod
     def create_many(cls, *data):

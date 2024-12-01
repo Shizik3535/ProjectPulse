@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QDateEdit, QPushButton, QLabel, QComboBox
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QDateEdit, QPushButton, QLabel, QComboBox, QErrorMessage
 from PyQt6.QtCore import QDate
 
 from datetime import datetime
@@ -94,13 +94,12 @@ class ProjectForm(QDialog):
         if status_id:
             status = status_id  # Сохраняем только ID статуса
 
-        print(
-            name,
-            description,
-            start_date,
-            end_date,
-            status
-        )
+        if not name:
+            error_message = QErrorMessage(self)
+            error_message.setWindowTitle("Ошибка")  # Установка заголовка окна
+            error_message.showMessage("Произошла ошибка! Заполните введите название проекта.")
+            error_message.exec()
+            return
         if self.project:
             # Обновление существующего проекта
             ProjectDAO.update(
@@ -112,18 +111,15 @@ class ProjectForm(QDialog):
                 status=status
             )
         else:
-            try:
-                # Создание нового проекта
-                print("Project create")
-                ProjectDAO.create(
-                    name=name,
-                    description=description,
-                    start_date=datetime.strptime(start_date, "%Y-%m-%d").date(),
-                    end_date=datetime.strptime(end_date, "%Y-%m-%d").date(),
-                    status_id=status
-                )
-            except Exception as e:
-                print(f"Ошибка при создании проекта: {str(e)}")
+            # Создание нового проекта
+            print("Project create")
+            ProjectDAO.create(
+                name=name,
+                description=description,
+                start_date=start_date,
+                end_date=end_date,
+                status_id=status
+            )
         print(f"Проект сохранён: {name}, {description}, {start_date}, {end_date}, {status_id}")
 
         self.accept()  # Закрытие формы после сохранения
