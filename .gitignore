@@ -1,0 +1,61 @@
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+env/
+ENV/
+*.egg-info/
+
+# Distribution / packaging
+*.egg
+*.tar.gz
+*.whl
+*.dist-info/
+
+# PyCharm project files
+.idea/
+
+# VS Code project files
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python testing cache
+.tox/
+.nox/
+.coverage
+*.cover
+*.hypothesis/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# pytest cache
+.cache/
+
+# test reports
+*.xml
+*.html
+
+# C extensions
+*.so
+
+# MacOS specific files
+.DS_Store
+
+# Windows specific files
+Thumbs.db
+
+# База данных
+projectpulse.db
